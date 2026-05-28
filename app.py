@@ -2,26 +2,29 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import numpy as np
 
-st.set_page_config(page_title="Collatz Chaos Lab", layout="wide")
+# Настройка страницы
+st.set_page_config(page_title="Collatz Chaos Lab Pro", layout="wide")
 
-st.title("🧪 Collatz Chaos Lab: Анализ устойчивости систем")
+# Заголовок и описание
+st.title("🧪 Collatz Chaos Lab: Анализ хаоса")
 st.sidebar.header("Параметры эксперимента")
 
 # Ввод данных
 n = st.sidebar.number_input("Начальное число (n)", value=27, step=1)
-power = st.sidebar.number_input("Возведение в степень (p)", value=1.0, step=0.1)
+power = st.sidebar.number_input("Степень (p)", value=1.0, step=0.01)
 multiplier = st.sidebar.number_input("Множитель (m)", value=3.0, step=0.01)
-max_steps = st.sidebar.number_input("Максимум шагов", value=500, step=1)
+max_steps = st.sidebar.number_input("Максимум шагов", value=1000, step=1)
 
+# Вычислительный движок
 def calculate_path(n, m, p):
-    # Используем float для работы с огромными числами
     curr = float(n**p)
     path = [curr]
     
     for _ in range(int(max_steps)):
+        # Условие завершения для классического цикла
         if curr == 1 and m == 3: break
         
-        # Логика итерации
+        # Основная логика Коллатца
         if curr % 2 == 0:
             curr = curr / 2
         else:
@@ -29,39 +32,39 @@ def calculate_path(n, m, p):
         
         path.append(curr)
         
-        # Если число ушло в бесконечность (inf), прерываем
-        if np.isinf(curr): 
+        # Проверка на выход в бесконечность
+        if np.isinf(curr) or curr > 1e100: 
             break
             
     return path
 
-# Расчет
+# Запуск расчета
 path = calculate_path(n, multiplier, power)
 
-# График с логарифмической шкалой
-fig, ax = plt.subplots(figsize=(10, 5))
-ax.plot(path, color='#00ff99', linewidth=2)
-
-# Включаем логарифмическую шкалу для отображения экспоненциального роста
-ax.set_yscale('log')
-
-ax.set_title(f"Логарифмическая динамика: m={multiplier}, p={power}, n={n}")
-ax.set_xlabel("Шаги")
+# Визуализация
+fig, ax = plt.subplots(figsize=(12, 6))
+ax.plot(path, color='#00ff99', linewidth=1.5, alpha=0.8)
+ax.set_yscale('log') # Логарифмический масштаб для анализа роста
+ax.set_title(f"Траектория системы: n={n}, m={multiplier}, p={power}")
+ax.set_xlabel("Количество итераций")
 ax.set_ylabel("log10(Значение числа)")
 ax.grid(True, which="both", linestyle='--', alpha=0.3)
 st.pyplot(fig)
 
-# Аналитика
-col1, col2 = st.columns(2)
+# Аналитическая панель
+col1, col2, col3 = st.columns(3)
 col1.metric("Финальное число", f"{path[-1]:.2e}")
-col2.metric("Количество шагов", len(path))
+col2.metric("Шагов до конца", len(path))
+col3.metric("Пиковое значение", f"{max(path):.2e}")
 
-# Вердикт системы
+# Вердикт системы (логика анализа)
 if np.isinf(path[-1]):
-    st.error("КРИТИЧЕСКИЙ ОТКАЗ: Система достигла математической бесконечности.")
-elif path[-1] > 1e15:
-    st.warning("Экспоненциальный рост: система за пределами контроля.")
+    st.error("КРИТИЧЕСКИЙ ОТКАЗ: Система дивергировала в бесконечность.")
 elif path[-1] <= 2:
-    st.success("Система стабилизирована.")
+    st.success("СТАТУС: Стабильный аттрактор достигнут.")
 else:
-    st.info("Состояние хаотического блуждания.")
+    st.info("СТАТУС: Состояние динамического хаоса.")
+
+# Вывод данных для глубокого анализа
+with st.expander("Посмотреть сырые данные траектории"):
+    st.write(path)
